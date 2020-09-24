@@ -7,7 +7,7 @@ import time
 import turtle
 
 
-def main():
+def get_astros():
     # Prints a list of astronauts currently in space,
     # their ship and how many total
     astro = requests.get('http://api.open-notify.org/astros.json')
@@ -17,21 +17,20 @@ def main():
         print(person['name'], ":", person['craft'])
     print("Total number of astronauts in space:", astro_data['number'])
 
-    # Prints the current lat/lon of ISS and a timestamp
-    curr_loc = requests.get('http://api.open-notify.org/iss-now.json')
-    loc_data = curr_loc.json()
-    timestamp = loc_data['timestamp']
-    ct = time.ctime(timestamp)
-    lat = loc_data['iss_position']['latitude']
-    lon = loc_data['iss_position']['longitude']
-    print("Position of ISS on", ct, ": Lat:", lat, "/ Lon:", lon)
 
+def get_next_time():
     # Finds next time ISS will pass over Indianapolis
     indy = requests.get('http://api.open-notify.org/' +
                         'iss-pass.json?lat=39.77&lon=-86.12')
     indy_data = indy.json()
     nextpass = indy_data['response'][0]['risetime']
     next_time = time.ctime(nextpass)
+    return next_time
+
+
+def main():
+    get_astros()
+    next_time = get_next_time()
 
     # Maps ISS using Turtle
     s = turtle.Screen()
@@ -46,10 +45,6 @@ def main():
     s.addshape(ISS_image)
     t.shape(ISS_image)
     t.penup()
-    # Set ISS location
-    lat = float(lat)
-    lon = float(lon)
-    t.goto(lon, lat)
     # Set Indianapolis location
     indy_lat = 39.77
     indy_lon = -86.12
@@ -60,6 +55,22 @@ def main():
     indy_t.penup()
     indy_t.goto(indy_lon, indy_lat)
     indy_t.write(next_time)
+
+    def move_ISS():
+        # Set ISS location
+        curr_loc = requests.get('http://api.open-notify.org/iss-now.json')
+        loc_data = curr_loc.json()
+        lat = loc_data['iss_position']['latitude']
+        lon = loc_data['iss_position']['longitude']
+        timestamp = loc_data['timestamp']
+        ct = time.ctime(timestamp)
+        print("Position of ISS on", ct, ": Lat:", lat, "/ Lon:", lon)
+        lat = float(lat)
+        lon = float(lon)
+        t.goto(lon, lat)
+        s.ontimer(move_ISS, 3000)
+
+    move_ISS()
     s.mainloop()
 
 
